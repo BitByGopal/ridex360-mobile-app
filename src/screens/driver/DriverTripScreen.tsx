@@ -13,6 +13,7 @@ import TripMap from "../../components/TripMap";
 import SOSButton from "../../components/SOSButton";
 import { colors, radius, spacing } from "../../theme";
 import { Trip } from "../../types";
+import { formatClockTime, formatDelay } from "../../utils/format";
 
 // Foreground GPS polling -- see backend README on why not background
 // tracking / WebSockets in V1.
@@ -137,6 +138,7 @@ export default function DriverTripScreen() {
 
   const activeStops = trip.trip_stops.filter((s) => s.status !== "skipped");
   const removedCount = trip.trip_stops.length - activeStops.length;
+  const nextStop = activeStops.find((s) => s.status !== "arrived");
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -188,6 +190,21 @@ export default function DriverTripScreen() {
             <Text style={styles.statLabel}>Passengers</Text>
           </View>
         </View>
+
+        {nextStop?.eta_minutes != null && (
+          <View style={styles.nextStopCard}>
+            <Text style={styles.nextStopLabel}>Next: {nextStop.stop.name}</Text>
+            <Text style={styles.nextStopTime}>Arriving {formatClockTime(nextStop.live_arrival_at)}</Text>
+            {nextStop.delay_minutes != null && (() => {
+              const { label, isDelayed } = formatDelay(nextStop.delay_minutes);
+              return (
+                <Text style={[styles.nextStopDelay, isDelayed && styles.nextStopDelayWarn]}>
+                  {isDelayed ? "\u26A0\uFE0F " : ""}{label} {"\u00B7"} scheduled {formatClockTime(nextStop.scheduled_arrival_at)}
+                </Text>
+              );
+            })()}
+          </View>
+        )}
 
         {trip.status === "scheduled" && (
           <TouchableOpacity style={styles.primaryButton} onPress={handleStart} disabled={busy}>
@@ -265,6 +282,11 @@ const styles = StyleSheet.create({
   statBox: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.sm, padding: 12, alignItems: "center" },
   statNum: { fontSize: 19, fontWeight: "700", color: colors.plum },
   statLabel: { fontSize: 9.5, color: colors.inkFaint, textTransform: "uppercase", marginTop: 2 },
+  nextStopCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, padding: 14, marginBottom: spacing.md },
+  nextStopLabel: { fontSize: 11, fontWeight: "700", color: colors.rose, textTransform: "uppercase", letterSpacing: 0.4 },
+  nextStopTime: { fontSize: 16, fontWeight: "700", color: colors.plum, marginTop: 4 },
+  nextStopDelay: { fontSize: 11.5, color: colors.good, marginTop: 3, fontWeight: "600" },
+  nextStopDelayWarn: { color: colors.warn },
   primaryButton: { backgroundColor: colors.plum, borderRadius: radius.pill, paddingVertical: 14, alignItems: "center", marginBottom: spacing.lg },
   primaryButtonText: { color: colors.cream, fontWeight: "700", fontSize: 14 },
   completeButton: { backgroundColor: colors.good, borderRadius: radius.pill, paddingVertical: 14, alignItems: "center", marginBottom: spacing.lg },

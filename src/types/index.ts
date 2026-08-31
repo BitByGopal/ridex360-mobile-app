@@ -36,6 +36,9 @@ export interface TripStop {
   status: TripStopStatus;
   arrived_at: string | null;
   eta_minutes: number | null;
+  scheduled_arrival_at: string | null;
+  live_arrival_at: string | null;
+  delay_minutes: number | null;
 }
 
 export type TripPassengerStatus =

@@ -13,6 +13,7 @@ import TripMap from "../../components/TripMap";
 import SOSButton from "../../components/SOSButton";
 import { colors, radius, spacing } from "../../theme";
 import { Trip } from "../../types";
+import { formatClockTime, formatDelay } from "../../utils/format";
 import type { ParentStackParamList } from "../../navigation/ParentNavigator";
 
 type Props = NativeStackScreenProps<ParentStackParamList, "ChildTrip">;
@@ -134,10 +135,24 @@ export default function ChildTripScreen({ route }: Props) {
           </View>
 
           {nextStop?.eta_minutes != null && (
-            <View style={styles.etaRow}>
-              <Text style={styles.etaNum}>{nextStop.eta_minutes}</Text>
-              <Text style={styles.etaUnit}>min to {nextStop.stop.name}</Text>
-            </View>
+            <>
+              <View style={styles.etaRow}>
+                <Text style={styles.etaNum}>{nextStop.eta_minutes}</Text>
+                <Text style={styles.etaUnit}>min to {nextStop.stop.name}</Text>
+              </View>
+              <Text style={styles.arrivalText}>Arriving at {formatClockTime(nextStop.live_arrival_at)}</Text>
+              {nextStop.delay_minutes != null && (() => {
+                const { label, isDelayed } = formatDelay(nextStop.delay_minutes);
+                return (
+                  <View style={styles.delayRow}>
+                    <Text style={styles.scheduledText}>Scheduled {formatClockTime(nextStop.scheduled_arrival_at)}</Text>
+                    <Text style={[styles.delayText, isDelayed && styles.delayTextWarn]}>
+                      {isDelayed ? "\u26A0\uFE0F " : ""}{label}
+                    </Text>
+                  </View>
+                );
+              })()}
+            </>
           )}
 
           <Text style={styles.driverText}>Driver: {trip.driver_name || "Not assigned"}</Text>
@@ -159,6 +174,9 @@ export default function ChildTripScreen({ route }: Props) {
                 {ts.status === "skipped" ? "Skipped -- no passengers today" : ts.status}
               </Text>
             </View>
+            {ts.status !== "skipped" && ts.scheduled_arrival_at && (
+              <Text style={styles.stopTime}>{formatClockTime(ts.scheduled_arrival_at)}</Text>
+            )}
           </View>
         ))}
 
@@ -205,6 +223,11 @@ const styles = StyleSheet.create({
   etaRow: { flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: spacing.md },
   etaNum: { color: colors.cream, fontSize: 34, fontWeight: "700" },
   etaUnit: { color: "#D8C6C3", fontSize: 12 },
+  arrivalText: { color: colors.cream, fontSize: 12.5, fontWeight: "600", marginTop: 4 },
+  delayRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
+  scheduledText: { color: "#B8A6A3", fontSize: 11, textDecorationLine: "line-through" },
+  delayText: { color: "#B7D6AE", fontSize: 11, fontWeight: "700" },
+  delayTextWarn: { color: "#F0B67D" },
   driverText: { color: "#D8C6C3", fontSize: 11.5, marginTop: spacing.sm },
   sectionLabel: { fontSize: 12, fontWeight: "700", color: colors.inkFaint, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: spacing.sm },
   stopRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 8 },
@@ -214,6 +237,7 @@ const styles = StyleSheet.create({
   stopName: { fontSize: 13.5, fontWeight: "600", color: colors.plum },
   stopNameSkipped: { textDecorationLine: "line-through", color: colors.inkFaint },
   stopStatus: { fontSize: 11, color: colors.inkFaint, marginTop: 1, textTransform: "capitalize" },
+  stopTime: { fontSize: 11, color: colors.inkFaint, fontWeight: "600" },
   absentButton: {
     marginTop: spacing.xl, borderWidth: 1.5, borderColor: colors.alert, borderRadius: radius.pill,
     paddingVertical: 14, alignItems: "center",
