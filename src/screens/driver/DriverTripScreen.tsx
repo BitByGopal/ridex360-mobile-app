@@ -24,6 +24,7 @@ export default function DriverTripScreen() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
   const gpsTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
@@ -37,7 +38,10 @@ export default function DriverTripScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // Once the trip is active, broadcast GPS on an interval.
+  // Once the trip is active, broadcast GPS on an interval. The whole
+  // flow (permission -> location fix -> network call) is wrapped in
+  // one try/catch so a failure at ANY step surfaces as a visible
+  // banner instead of silently doing nothing forever.
   useEffect(() => {
     if (trip?.status !== "active") {
       if (gpsTimer.current) clearInterval(gpsTimer.current);
@@ -45,15 +49,19 @@ export default function DriverTripScreen() {
     }
 
     async function sendPing() {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") return;
-      const pos = await Location.getCurrentPositionAsync({});
       if (!trip) return;
       try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          setGpsError("Location permission not granted.");
+          return;
+        }
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         const updated = await Api.sendGpsPing(trip.id, pos.coords.latitude, pos.coords.longitude);
         setTrip(updated);
-      } catch {
-        // transient network error -- next tick will retry
+        setGpsError(null);
+      } catch (e) {
+        setGpsError(e instanceof Error ? e.message : "Couldn't get GPS location.");
       }
     }
 
@@ -148,6 +156,12 @@ export default function DriverTripScreen() {
         </Text>
         <Text style={styles.title}>{trip.vehicle_label || "Your vehicle"}</Text>
         <Text style={styles.subtitle}>{trip.route.name}</Text>
+
+        {gpsError && (
+          <View style={styles.gpsErrorBanner}>
+            <Text style={styles.gpsErrorText}>⚠️ GPS: {gpsError}</Text>
+          </View>
+        )}
 
         {trip.traffic_detected && (
           <View style={[styles.trafficBanner, trip.alt_route_active ? styles.trafficBannerGood : styles.trafficBannerWarn]}>
@@ -268,6 +282,8 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 11, fontWeight: "700", letterSpacing: 1.2, color: colors.rose, textTransform: "uppercase" },
   title: { fontSize: 22, fontWeight: "700", color: colors.plum, marginTop: 4 },
   subtitle: { fontSize: 12.5, color: colors.inkFaint, marginTop: 2, marginBottom: spacing.md },
+  gpsErrorBanner: { backgroundColor: colors.alertSoft, borderRadius: radius.md, padding: 10, marginBottom: spacing.sm },
+  gpsErrorText: { fontSize: 11.5, color: colors.alert, fontWeight: "600" },
   trafficBanner: { flexDirection: "row", gap: 10, alignItems: "center", padding: 13, borderRadius: radius.md, marginBottom: spacing.sm },
   trafficBannerWarn: { backgroundColor: colors.alertSoft },
   trafficBannerGood: { backgroundColor: colors.goodSoft },
