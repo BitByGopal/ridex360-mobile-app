@@ -97,6 +97,14 @@ export default function ChildTripScreen({ route }: Props) {
   const isAbsent = myPassengerRecord?.status === "absent";
   const nextStop = trip.trip_stops.find((s) => s.status !== "arrived" && s.status !== "skipped");
 
+  const pingAgeSec = trip.last_ping_at
+    ? Math.floor((Date.now() - new Date(trip.last_ping_at).getTime()) / 1000)
+    : null;
+  const gpsLabel =
+    pingAgeSec == null ? "No live signal yet"
+    : pingAgeSec < 20 ? "Live"
+    : `Updated ${pingAgeSec}s ago`;
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -156,6 +164,7 @@ export default function ChildTripScreen({ route }: Props) {
           )}
 
           <Text style={styles.driverText}>Driver: {trip.driver_name || "Not assigned"}</Text>
+          <Text style={styles.driverText}>{gpsLabel}</Text>
         </View>
 
         <Text style={styles.sectionLabel}>Route stops</Text>

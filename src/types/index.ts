@@ -48,6 +48,9 @@ export interface TripPassenger {
   id: string;
   passenger: string;
   passenger_name: string;
+  passenger_detail: string;
+  pickup_stop_id: string | null;
+  pickup_stop_name: string | null;
   status: TripPassengerStatus;
   boarded_at: string | null;
   dropped_off_at: string | null;
