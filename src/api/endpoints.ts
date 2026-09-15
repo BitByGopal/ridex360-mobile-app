@@ -20,7 +20,7 @@ export const Api = {
   sendGpsPing: (tripId: string, latitude: number, longitude: number) =>
     apiRequest<Trip>(`/driver/trips/${tripId}/gps/`, {
       method: "POST",
-      body: { latitude, longitude },
+      body: { latitude: Number(latitude.toFixed(6)), longitude: Number(longitude.toFixed(6)) },
     }),
   markStopArrived: (tripId: string, tripStopId: string) =>
     apiRequest<Trip>(`/driver/trips/${tripId}/stops/${tripStopId}/arrived/`, { method: "POST" }),
