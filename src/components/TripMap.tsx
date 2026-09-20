@@ -55,7 +55,7 @@ export default function TripMap({ trip, height = 220 }: Props) {
       latitude: parseFloat(trip.last_lat as string),
       longitude: parseFloat(trip.last_lng as string),
       latitudeDelta: 0.006,
-      longitudeDelta: 0.006,
+      longitudeDelta: 0.006, 
     }, 400);
   }
 
