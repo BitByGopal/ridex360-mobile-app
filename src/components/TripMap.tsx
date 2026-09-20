@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   fullscreenBtn: {
-    position: "absolute", top: 12, right: 12,
+    position: "absolute", top: 12, right: 12, 
     width: 34, height: 34, borderRadius: 10,
     backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
     shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
