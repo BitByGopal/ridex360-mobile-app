@@ -18,7 +18,7 @@ export default function SOSButton() {
 
   function call(number: string) {
     setOpen(false);
-    Linking.openURL(`tel:${number}`);
+    Linking.openURL(`tel:${number}`); 
   }
 
   return (
@@ -31,7 +31,7 @@ export default function SOSButton() {
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <View style={styles.sheet}>
             <View style={styles.handle} />
-            <Text style={styles.title}>Emergency</Text>
+            <Text style={styles.title}>Emergency</Text> 
             <Text style={styles.subtitle}>This calls the real number on your phone.</Text>
 
             {EMERGENCY_CONTACTS.map((c) => (
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: "700", color: colors.plum, textAlign: "center" },
   subtitle: { fontSize: 12, color: colors.inkFaint, textAlign: "center", marginTop: 4, marginBottom: spacing.md },
   contactRow: {
-    flexDirection: "row", alignItems: "center", gap: 12,
+    flexDirection: "row", alignItems: "center", gap: 12, 
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line,
     borderRadius: radius.md, padding: 14, marginBottom: 10,
   },
