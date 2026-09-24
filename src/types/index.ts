@@ -73,6 +73,8 @@ export interface Trip {
   last_lat: string | null;
   last_lng: string | null;
   last_ping_at: string | null;
+  current_speed_kmh: number | null;
+  driver_phone: string | null;
   traffic_detected: boolean;
   alt_route_active: boolean;
   trip_stops: TripStop[];

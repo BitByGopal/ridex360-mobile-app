@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, ScrollView, StyleSheet, Text,
+  ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text,
   TouchableOpacity, View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,12 +21,13 @@ type Props = NativeStackScreenProps<ParentStackParamList, "ChildTrip">;
 // Polling stands in for real-time push in V1 -- see backend README for why.
 const POLL_INTERVAL_MS = 8000;
 
-export default function ChildTripScreen({ route }: Props) {
+export default function ChildTripScreen({ route, navigation }: Props) {
   const { passengerId, childName } = route.params;
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [notScheduled, setNotScheduled] = useState(false);
   const [marking, setMarking] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const load = useCallback(async () => {
     try {
@@ -50,21 +51,26 @@ export default function ChildTripScreen({ route }: Props) {
   }, [load]);
 
   async function handleMarkAbsent() {
+    if (!trip) return;
+    const myRecord = trip.trip_passengers.find((tp) => tp.passenger === passengerId);
+    const isAbsent = myRecord?.status === "absent";
     Alert.alert(
-      "Mark absent today?",
-      `${childName}'s stop will be removed from today's route automatically.`,
+      isAbsent ? "Undo absence?" : "Mark absent today?",
+      isAbsent
+        ? `${childName} will be scheduled again for today's trip.`
+        : `${childName}'s stop will be removed from today's route automatically.`,
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Mark absent",
-          style: "destructive",
+          text: isAbsent ? "Undo" : "Mark absent",
+          style: isAbsent ? "default" : "destructive",
           onPress: async () => {
             setMarking(true);
             try {
               const updated = await Api.markAbsent(passengerId);
               setTrip(updated);
             } catch {
-              Alert.alert("Couldn't mark absent", "Please try again.");
+              Alert.alert("Couldn't update", "Please try again.");
             } finally {
               setMarking(false);
             }
@@ -72,6 +78,24 @@ export default function ChildTripScreen({ route }: Props) {
         },
       ]
     );
+  }
+
+  function handleContactDriver() {
+    if (!trip?.driver_phone) {
+      Alert.alert("No phone on file", "The driver hasn't added a contact number yet.");
+      return;
+    }
+    Linking.openURL(`tel:${trip.driver_phone}`);
+  }
+
+  function handleViewFullRoute() {
+    scrollRef.current?.scrollToEnd({ animated: true });
+  }
+
+  function handleSafety() {
+    // ChildTripScreen sits inside the Home tab's nested stack -- the
+    // Safety tab lives one level up, on the parent Tab.Navigator.
+    navigation.getParent()?.navigate("Safety" as never);
   }
 
   if (loading) {
@@ -96,20 +120,13 @@ export default function ChildTripScreen({ route }: Props) {
   const myPassengerRecord = trip.trip_passengers.find((tp) => tp.passenger === passengerId);
   const isAbsent = myPassengerRecord?.status === "absent";
   const nextStop = trip.trip_stops.find((s) => s.status !== "arrived" && s.status !== "skipped");
-
-  const pingAgeSec = trip.last_ping_at
-    ? Math.floor((Date.now() - new Date(trip.last_ping_at).getTime()) / 1000)
-    : null;
-  const gpsLabel =
-    trip.status === "completed" ? "Trip completed"
-    : trip.status === "scheduled" ? "Trip not started yet"
-    : pingAgeSec == null ? "Connecting to live location..."
-    : pingAgeSec < 20 ? "Live"
-    : `Signal delayed \u2014 updated ${pingAgeSec}s ago`;
+  const boardedCount = trip.trip_passengers.filter((p) => p.status === "boarded").length;
+  const activeCount = trip.trip_passengers.filter((p) => p.status !== "absent" && p.status !== "no_show").length;
+  const delay = nextStop?.delay_minutes != null ? formatDelay(nextStop.delay_minutes) : null;
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         <Text style={styles.eyebrow}>{trip.route.route_type === "morning" ? "Good morning" : "Good evening"}</Text>
         <Text style={styles.title}>{childName}'s trip</Text>
 
@@ -129,8 +146,7 @@ export default function ChildTripScreen({ route }: Props) {
           </View>
         )}
 
-        <TripMap trip={trip} />
-
+        {/* Identity card -- vehicle, route, status only */}
         <View style={styles.vehicleCard}>
           <View style={styles.vehicleTop}>
             <View>
@@ -143,69 +159,100 @@ export default function ChildTripScreen({ route }: Props) {
               </Text>
             </View>
           </View>
-
-          {nextStop?.eta_minutes != null && (
-            <>
-              <View style={styles.etaRow}>
-                <Text style={styles.etaNum}>{nextStop.eta_minutes}</Text>
-                <Text style={styles.etaUnit}>min to {nextStop.stop.name}</Text>
-              </View>
-              <Text style={styles.arrivalText}>Arriving at {formatClockTime(nextStop.live_arrival_at)}</Text>
-              {nextStop.delay_minutes != null && (() => {
-                const { label, isDelayed } = formatDelay(nextStop.delay_minutes);
-                return (
-                  <View style={styles.delayRow}>
-                    <Text style={styles.scheduledText}>Scheduled {formatClockTime(nextStop.scheduled_arrival_at)}</Text>
-                    <Text style={[styles.delayText, isDelayed && styles.delayTextWarn]}>
-                      {isDelayed ? "\u26A0\uFE0F " : ""}{label}
-                    </Text>
-                  </View>
-                );
-              })()}
-            </>
-          )}
-
           <Text style={styles.driverText}>Driver: {trip.driver_name || "Not assigned"}</Text>
-          <Text style={styles.driverText}>{gpsLabel}</Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Route stops</Text>
-        {trip.trip_stops.map((ts) => (
-          <View key={ts.id} style={styles.stopRow}>
-            <View style={[
-              styles.stopDot,
-              ts.status === "arrived" && styles.stopDotDone,
-              ts.status === "skipped" && styles.stopDotSkipped,
-            ]} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.stopName, ts.status === "skipped" && styles.stopNameSkipped]}>
-                {ts.stop.name}
-              </Text>
-              <Text style={styles.stopStatus}>
-                {ts.status === "skipped" ? "Skipped -- no passengers today" : ts.status}
-              </Text>
-            </View>
-            {ts.status !== "skipped" && ts.scheduled_arrival_at && (
-              <Text style={styles.stopTime}>{formatClockTime(ts.scheduled_arrival_at)}</Text>
+        {/* Metrics row -- Next Stop / ETA (+delay) / Speed / Onboard */}
+        <View style={styles.metricsRow}>
+          <View style={styles.metricBox}>
+            <Text style={styles.metricLabel}>Next Stop</Text>
+            <Text style={styles.metricValue} numberOfLines={1}>{nextStop?.stop.name || "--"}</Text>
+          </View>
+          <View style={styles.metricBox}>
+            <Text style={styles.metricLabel}>ETA</Text>
+            <Text style={styles.metricValue}>{nextStop ? formatClockTime(nextStop.live_arrival_at) : "--"}</Text>
+            {delay && (
+              <Text style={[styles.metricDelay, delay.isDelayed && styles.metricDelayWarn]}>{delay.label}</Text>
             )}
           </View>
-        ))}
+          <View style={styles.metricBox}>
+            <Text style={styles.metricLabel}>Speed</Text>
+            <Text style={styles.metricValue}>{trip.current_speed_kmh != null ? `${trip.current_speed_kmh} km/h` : "--"}</Text>
+          </View>
+          <View style={styles.metricBox}>
+            <Text style={styles.metricLabel}>Onboard</Text>
+            <Text style={styles.metricValue}>{boardedCount}/{activeCount}</Text>
+          </View>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.absentButton, isAbsent && styles.absentButtonActive]}
-          onPress={handleMarkAbsent}
-          disabled={marking}
-        >
-          {marking ? (
-            <ActivityIndicator color={isAbsent ? colors.cream : colors.alert} />
-          ) : (
-            <Text style={[styles.absentButtonText, isAbsent && styles.absentButtonTextActive]}>
-              {isAbsent ? `${childName} marked absent today` : "Mark absent today"}
-            </Text>
-          )}
-        </TouchableOpacity>
+        <TripMap trip={trip} />
+
+        {/* Quick actions */}
+        <Text style={styles.sectionLabel}>Quick actions</Text>
+        <View style={styles.quickGrid}>
+          <TouchableOpacity style={styles.quickCard} onPress={handleMarkAbsent} disabled={marking}>
+            <Text style={styles.quickIcon}>{isAbsent ? "\u21A9\uFE0F" : "\u270B"}</Text>
+            <Text style={styles.quickLabel}>{isAbsent ? "Undo absence" : "Mark absent"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickCard} onPress={handleContactDriver}>
+            <Text style={styles.quickIcon}>{"\uD83D\uDCDE"}</Text>
+            <Text style={styles.quickLabel}>Contact driver</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickCard} onPress={handleViewFullRoute}>
+            <Text style={styles.quickIcon}>{"\uD83D\uDDFA\uFE0F"}</Text>
+            <Text style={styles.quickLabel}>View full route</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickCard} onPress={handleSafety}>
+            <Text style={styles.quickIcon}>{"\uD83D\uDEE1\uFE0F"}</Text>
+            <Text style={styles.quickLabel}>Safety</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Enriched stop timeline */}
+        <Text style={styles.sectionLabel}>Today's stops</Text>
+        {trip.trip_stops
+          .slice()
+          .sort((a, b) => a.stop.sequence - b.stop.sequence)
+          .map((ts, index) => {
+            const isNext = nextStop?.id === ts.id;
+            const isOrigin = index === 0;
+            let icon = "\u25CB"; // upcoming
+            let statusText = "Upcoming";
+            if (ts.status === "arrived") {
+              icon = "\u2713";
+              statusText = isOrigin
+                ? `Departed${ts.arrived_at ? " " + formatClockTime(ts.arrived_at) : ""}`
+                : `Completed${ts.arrived_at ? " " + formatClockTime(ts.arrived_at) : ""}`;
+            } else if (ts.status === "skipped") {
+              icon = "\u2715";
+              statusText = "Skipped -- no passengers today";
+            } else if (isNext) {
+              icon = "\u25CF";
+              statusText = `Next stop \u00B7 ETA ${formatClockTime(ts.live_arrival_at)}`;
+            } else if (ts.scheduled_arrival_at) {
+              statusText = `Upcoming \u00B7 ${formatClockTime(ts.scheduled_arrival_at)}`;
+            }
+            return (
+              <View key={ts.id} style={styles.stopRow}>
+                <View style={[
+                  styles.stopDot,
+                  ts.status === "arrived" && styles.stopDotDone,
+                  ts.status === "skipped" && styles.stopDotSkipped,
+                  isNext && styles.stopDotNext,
+                ]}>
+                  <Text style={styles.stopDotIcon}>{icon}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.stopName, ts.status === "skipped" && styles.stopNameSkipped]}>
+                    {ts.stop.name}
+                  </Text>
+                  <Text style={[styles.stopStatus, isNext && styles.stopStatusNext]}>{statusText}</Text>
+                </View>
+              </View>
+            );
+          })}
       </ScrollView>
-      <SOSButton />
+      <SOSButton bottomOffset={78} />
     </SafeAreaView>
   );
 }
@@ -224,36 +271,33 @@ const styles = StyleSheet.create({
   bannerText: { fontSize: 11.5, color: colors.inkSoft, marginTop: 1 },
   eyebrow: { fontSize: 11, fontWeight: "700", letterSpacing: 1.2, color: colors.rose, textTransform: "uppercase" },
   title: { fontSize: 22, fontWeight: "700", color: colors.plum, marginTop: 4, marginBottom: spacing.md },
-  vehicleCard: { backgroundColor: colors.plum, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.lg },
+  vehicleCard: { backgroundColor: colors.plum, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.sm },
   vehicleTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   vehicleName: { color: colors.cream, fontSize: 18, fontWeight: "700" },
   vehicleSub: { color: "#D8C6C3", fontSize: 11.5, marginTop: 2 },
   statusChip: { backgroundColor: "rgba(232,210,196,0.18)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
   statusChipActive: { backgroundColor: colors.good },
   statusChipText: { color: "#F1E4DD", fontSize: 10.5, fontWeight: "700" },
-  etaRow: { flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: spacing.md },
-  etaNum: { color: colors.cream, fontSize: 34, fontWeight: "700" },
-  etaUnit: { color: "#D8C6C3", fontSize: 12 },
-  arrivalText: { color: colors.cream, fontSize: 12.5, fontWeight: "600", marginTop: 4 },
-  delayRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
-  scheduledText: { color: "#B8A6A3", fontSize: 11, textDecorationLine: "line-through" },
-  delayText: { color: "#B7D6AE", fontSize: 11, fontWeight: "700" },
-  delayTextWarn: { color: "#F0B67D" },
   driverText: { color: "#D8C6C3", fontSize: 11.5, marginTop: spacing.sm },
-  sectionLabel: { fontSize: 12, fontWeight: "700", color: colors.inkFaint, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: spacing.sm },
+  metricsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.md },
+  metricBox: { flexBasis: "48%", flexGrow: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.sm, padding: 10 },
+  metricLabel: { fontSize: 9.5, fontWeight: "700", color: colors.inkFaint, textTransform: "uppercase", letterSpacing: 0.4 },
+  metricValue: { fontSize: 14, fontWeight: "700", color: colors.plum, marginTop: 3 },
+  metricDelay: { fontSize: 10, fontWeight: "600", color: colors.good, marginTop: 2 },
+  metricDelayWarn: { color: colors.warn },
+  sectionLabel: { fontSize: 12, fontWeight: "700", color: colors.inkFaint, textTransform: "uppercase", letterSpacing: 0.5, marginTop: spacing.md, marginBottom: spacing.sm },
+  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: spacing.sm },
+  quickCard: { flexBasis: "47%", flexGrow: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, padding: 14, alignItems: "center" },
+  quickIcon: { fontSize: 20, marginBottom: 6 },
+  quickLabel: { fontSize: 11.5, fontWeight: "600", color: colors.plum, textAlign: "center" },
   stopRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 8 },
-  stopDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.roseLight, marginTop: 3 },
+  stopDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.roseLight, marginTop: 1, alignItems: "center", justifyContent: "center" },
   stopDotDone: { backgroundColor: colors.good },
   stopDotSkipped: { backgroundColor: colors.inkFaint },
+  stopDotNext: { backgroundColor: colors.plum },
+  stopDotIcon: { fontSize: 10, color: "#fff" },
   stopName: { fontSize: 13.5, fontWeight: "600", color: colors.plum },
   stopNameSkipped: { textDecorationLine: "line-through", color: colors.inkFaint },
-  stopStatus: { fontSize: 11, color: colors.inkFaint, marginTop: 1, textTransform: "capitalize" },
-  stopTime: { fontSize: 11, color: colors.inkFaint, fontWeight: "600" },
-  absentButton: {
-    marginTop: spacing.xl, borderWidth: 1.5, borderColor: colors.alert, borderRadius: radius.pill,
-    paddingVertical: 14, alignItems: "center",
-  },
-  absentButtonActive: { backgroundColor: colors.alert },
-  absentButtonText: { color: colors.alert, fontWeight: "700", fontSize: 13.5 },
-  absentButtonTextActive: { color: colors.cream },
+  stopStatus: { fontSize: 11, color: colors.inkFaint, marginTop: 1 },
+  stopStatusNext: { color: colors.plum, fontWeight: "600" },
 });
