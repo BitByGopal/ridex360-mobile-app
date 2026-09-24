@@ -101,9 +101,11 @@ export default function ChildTripScreen({ route }: Props) {
     ? Math.floor((Date.now() - new Date(trip.last_ping_at).getTime()) / 1000)
     : null;
   const gpsLabel =
-    pingAgeSec == null ? "No live signal yet"
+    trip.status === "completed" ? "Trip completed"
+    : trip.status === "scheduled" ? "Trip not started yet"
+    : pingAgeSec == null ? "Connecting to live location..."
     : pingAgeSec < 20 ? "Live"
-    : `Updated ${pingAgeSec}s ago`;
+    : `Signal delayed \u2014 updated ${pingAgeSec}s ago`;
 
   return (
     <SafeAreaView style={styles.safe}>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors, radius, spacing } from "../theme";
@@ -39,9 +39,7 @@ export default function RoleSelectScreen({ onSelect }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <View style={styles.mark} />
-        <Text style={styles.brand}>RideX360</Text>
-        <Text style={styles.tagline}>Smart Mobility {"\u00B7"} Safer Journeys</Text>
+        <Image source={require("../assets/logo.png")} style={styles.logo} />
       </View>
 
       <Text style={styles.question}>How will you use RideX360?</Text>
@@ -66,12 +64,7 @@ export default function RoleSelectScreen({ onSelect }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.cream, paddingHorizontal: spacing.lg },
   header: { alignItems: "center", marginTop: spacing.lg, marginBottom: spacing.xl },
-  mark: {
-    width: 30, height: 30, borderRadius: 10, marginBottom: 10,
-    backgroundColor: colors.plum,
-  },
-  brand: { fontSize: 22, fontWeight: "700", color: colors.plum },
-  tagline: { fontSize: 11, color: colors.rose, fontWeight: "600", letterSpacing: 0.4, marginTop: 2 },
+  logo: { width: 120, height: 120, resizeMode: "contain" },
   question: { fontSize: 17, fontWeight: "700", color: colors.plum, textAlign: "center", marginBottom: spacing.lg },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between" },
   card: {
