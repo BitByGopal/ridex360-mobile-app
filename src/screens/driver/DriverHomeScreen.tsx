@@ -34,8 +34,8 @@ export default function DriverHomeScreen() {
   }
 
   const activeStops = trip.trip_stops.filter((s) => s.status !== "skipped");
-  const removedCount = trip.trip_stops.length - activeStops.length;
   const nextStop = activeStops.find((s) => s.status !== "arrived");
+  const finalStop = trip.trip_stops.slice().sort((a, b) => a.stop.sequence - b.stop.sequence).slice(-1)[0];
 
   const pingAgeSec = trip.last_ping_at
     ? Math.floor((Date.now() - new Date(trip.last_ping_at).getTime()) / 1000)
@@ -57,8 +57,6 @@ export default function DriverHomeScreen() {
       },
     ]);
   }
-
-  const previewPassengers = trip.trip_passengers.slice(0, 3);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -104,24 +102,25 @@ export default function DriverHomeScreen() {
           </View>
         )}
 
-        {trip.status === "active" && !trip.traffic_detected && (
-          <TouchableOpacity style={styles.trafficTriggerBtn} onPress={detectTraffic}>
-            <Text style={styles.trafficTriggerText}>{"\u26A0\uFE0F"} Simulate Traffic Detected</Text>
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.statRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNum}>{activeStops.length}</Text>
-            <Text style={styles.statLabel}>Active stops</Text>
+        {/* 4-metric row */}
+        <View style={styles.metricsRow}>
+          <View style={styles.metricBox}>
+            <Text style={styles.metricValue}>{trip.trip_stops.length}</Text>
+            <Text style={styles.metricLabel}>Total Stops</Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNum}>{removedCount}</Text>
-            <Text style={styles.statLabel}>Removed</Text>
+          <View style={styles.metricBox}>
+            <Text style={styles.metricValue}>{trip.trip_passengers.length}</Text>
+            <Text style={styles.metricLabel}>Passengers</Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNum}>{trip.trip_passengers.length}</Text>
-            <Text style={styles.statLabel}>Passengers</Text>
+          <View style={styles.metricBox}>
+            <Text style={styles.metricValue}>{trip.started_at ? formatClockTime(trip.started_at) : "--"}</Text>
+            <Text style={styles.metricLabel}>Start Time</Text>
+          </View>
+          <View style={styles.metricBox}>
+            <Text style={styles.metricValue}>
+              {trip.started_at && finalStop?.scheduled_arrival_at ? formatClockTime(finalStop.scheduled_arrival_at) : "--"}
+            </Text>
+            <Text style={styles.metricLabel}>Est. End Time</Text>
           </View>
         </View>
 
@@ -154,18 +153,30 @@ export default function DriverHomeScreen() {
           <View style={styles.doneBanner}><Text style={styles.doneBannerText}>Trip completed</Text></View>
         )}
 
-        <View style={styles.previewHeader}>
-          <Text style={styles.sectionLabel}>Passengers</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Passengers")}>
-            <Text style={styles.viewAllText}>View all \u2192</Text>
+        {/* Quick actions */}
+        <Text style={styles.sectionLabel}>Quick actions</Text>
+        <View style={styles.quickGrid}>
+          <TouchableOpacity style={styles.quickCard} onPress={() => navigation.navigate("Passengers")}>
+            <Text style={styles.quickIcon}>{"\uD83D\uDC65"}</Text>
+            <Text style={styles.quickLabel}>View passengers</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickCard} onPress={() => navigation.navigate("Route")}>
+            <Text style={styles.quickIcon}>{"\uD83E\uDDED"}</Text>
+            <Text style={styles.quickLabel}>Route details</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickCard} onPress={() => navigation.navigate("Passengers")}>
+            <Text style={styles.quickIcon}>{"\u2718"}</Text>
+            <Text style={styles.quickLabel}>Mark absentees</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={detectTraffic}
+            disabled={trip.status !== "active" || trip.traffic_detected}
+          >
+            <Text style={styles.quickIcon}>{"\u26A0\uFE0F"}</Text>
+            <Text style={styles.quickLabel}>Simulate traffic</Text>
           </TouchableOpacity>
         </View>
-        {previewPassengers.map((tp) => (
-          <View key={tp.id} style={styles.paxPreviewRow}>
-            <Text style={styles.paxPreviewName}>{tp.passenger_name}</Text>
-            <Text style={styles.paxPreviewStatus}>{tp.status.replace("_", " ")}</Text>
-          </View>
-        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -193,12 +204,10 @@ const styles = StyleSheet.create({
   altRouteBtn: { marginTop: 6, alignSelf: "flex-start", backgroundColor: colors.plum, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill },
   altRouteBtnText: { color: colors.cream, fontSize: 11, fontWeight: "700" },
   clearText: { fontSize: 11.5, color: colors.inkFaint, fontWeight: "600" },
-  trafficTriggerBtn: { alignSelf: "flex-start", marginTop: 4, marginBottom: spacing.md, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 7 },
-  trafficTriggerText: { fontSize: 11, fontWeight: "600", color: colors.warn },
-  statRow: { flexDirection: "row", gap: 10, marginBottom: spacing.md },
-  statBox: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.sm, padding: 12, alignItems: "center" },
-  statNum: { fontSize: 19, fontWeight: "700", color: colors.plum },
-  statLabel: { fontSize: 9.5, color: colors.inkFaint, textTransform: "uppercase", marginTop: 2 },
+  metricsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.md },
+  metricBox: { flexBasis: "48%", flexGrow: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.sm, padding: 12, alignItems: "center" },
+  metricValue: { fontSize: 17, fontWeight: "700", color: colors.plum },
+  metricLabel: { fontSize: 9.5, color: colors.inkFaint, textTransform: "uppercase", marginTop: 2, letterSpacing: 0.3 },
   nextStopCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, padding: 14, marginBottom: spacing.md },
   nextStopLabel: { fontSize: 11, fontWeight: "700", color: colors.rose, textTransform: "uppercase", letterSpacing: 0.4 },
   nextStopTime: { fontSize: 16, fontWeight: "700", color: colors.plum, marginTop: 4 },
@@ -210,10 +219,9 @@ const styles = StyleSheet.create({
   completeButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   doneBanner: { backgroundColor: colors.goodSoft, borderRadius: radius.sm, padding: 12, alignItems: "center", marginBottom: spacing.lg },
   doneBannerText: { color: "#3F5A3C", fontWeight: "700", fontSize: 12.5 },
-  previewHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm },
-  sectionLabel: { fontSize: 12, fontWeight: "700", color: colors.inkFaint, textTransform: "uppercase", letterSpacing: 0.5 },
-  viewAllText: { fontSize: 11.5, fontWeight: "700", color: colors.rose },
-  paxPreviewRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.line },
-  paxPreviewName: { fontSize: 12.5, fontWeight: "600", color: colors.plum },
-  paxPreviewStatus: { fontSize: 11, color: colors.inkFaint, textTransform: "capitalize" },
+  sectionLabel: { fontSize: 12, fontWeight: "700", color: colors.inkFaint, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: spacing.sm },
+  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  quickCard: { flexBasis: "47%", flexGrow: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, padding: 14, alignItems: "center" },
+  quickIcon: { fontSize: 20, marginBottom: 6 },
+  quickLabel: { fontSize: 11.5, fontWeight: "600", color: colors.plum, textAlign: "center" },
 });

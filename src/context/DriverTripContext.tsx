@@ -17,6 +17,7 @@ interface DriverTripContextValue {
   completeTrip: () => Promise<{ ok: true } | { ok: false; message: string }>;
   boardPassenger: (tripPassengerId: string) => Promise<void>;
   dropOffPassenger: (tripPassengerId: string) => Promise<void>;
+  noShowPassenger: (tripPassengerId: string) => Promise<void>;
   detectTraffic: () => Promise<void>;
   useAlternateRoute: () => Promise<void>;
   clearTraffic: () => Promise<void>;
@@ -118,6 +119,11 @@ export function DriverTripProvider({ children }: { children: React.ReactNode }) 
     setTrip(await Api.markPassengerDroppedOff(trip.id, tripPassengerId));
   }
 
+  async function noShowPassenger(tripPassengerId: string) {
+    if (!trip) return;
+    setTrip(await Api.markPassengerNoShow(trip.id, tripPassengerId));
+  }
+
   async function detectTraffic() {
     if (!trip) return;
     setTrip(await Api.detectTraffic(trip.id));
@@ -137,7 +143,7 @@ export function DriverTripProvider({ children }: { children: React.ReactNode }) 
     <DriverTripContext.Provider
       value={{
         trip, loading, busy, gpsError, reload,
-        startTrip, completeTrip, boardPassenger, dropOffPassenger,
+        startTrip, completeTrip, boardPassenger, dropOffPassenger, noShowPassenger,
         detectTraffic, useAlternateRoute, clearTraffic,
       }}
     >

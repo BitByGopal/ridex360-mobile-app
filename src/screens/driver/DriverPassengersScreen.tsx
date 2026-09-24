@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useDriverTrip } from "../../context/DriverTripContext";
@@ -8,7 +8,7 @@ import { formatClockTime } from "../../utils/format";
 import { TripPassenger } from "../../types";
 
 export default function DriverPassengersScreen() {
-  const { trip, loading, boardPassenger, dropOffPassenger } = useDriverTrip();
+  const { trip, loading, boardPassenger, dropOffPassenger, noShowPassenger } = useDriverTrip();
   const [selectedPax, setSelectedPax] = useState<TripPassenger | null>(null);
 
   if (loading) {
@@ -33,6 +33,17 @@ export default function DriverPassengersScreen() {
     ? trip.trip_stops.find((ts) => ts.stop.id === selectedPax.pickup_stop_id)
     : null;
 
+  function confirmNoShow(tp: TripPassenger) {
+    Alert.alert(
+      "Mark as no-show?",
+      `${tp.passenger_name} will be marked as not present at their stop today.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Mark no-show", style: "destructive", onPress: () => noShowPassenger(tp.id) },
+      ]
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -41,6 +52,7 @@ export default function DriverPassengersScreen() {
 
         {trip.trip_passengers.map((tp) => {
           const isAbsent = tp.status === "absent" || tp.status === "no_show";
+          const isPending = tp.status === "scheduled" || tp.status === "waiting";
           return (
             <View key={tp.id} style={[styles.paxRow, isAbsent && styles.paxRowRemoved]}>
               <TouchableOpacity style={styles.paxInfoTouchable} onPress={() => setSelectedPax(tp)}>
@@ -53,10 +65,15 @@ export default function DriverPassengersScreen() {
               </TouchableOpacity>
               {!isAbsent && trip.status === "active" && (
                 <View style={styles.paxActions}>
-                  {tp.status !== "boarded" && tp.status !== "dropped_off" && (
-                    <TouchableOpacity style={styles.paxActionBtn} onPress={() => boardPassenger(tp.id)}>
-                      <Text style={styles.paxActionText}>Board</Text>
-                    </TouchableOpacity>
+                  {isPending && (
+                    <>
+                      <TouchableOpacity style={styles.paxActionBtn} onPress={() => boardPassenger(tp.id)}>
+                        <Text style={styles.paxActionText}>Board</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.paxNoShowBtn} onPress={() => confirmNoShow(tp)}>
+                        <Text style={styles.paxNoShowText}>No show</Text>
+                      </TouchableOpacity>
+                    </>
                   )}
                   {tp.status === "boarded" && (
                     <TouchableOpacity style={styles.paxActionBtn} onPress={() => dropOffPassenger(tp.id)}>
@@ -66,7 +83,9 @@ export default function DriverPassengersScreen() {
                   {tp.status === "dropped_off" && <Text style={styles.paxDone}>Done</Text>}
                 </View>
               )}
-              {isAbsent && <Text style={styles.paxAbsentTag}>Absent</Text>}
+              {isAbsent && (
+                <Text style={styles.paxAbsentTag}>{tp.status === "no_show" ? "No-show" : "Absent"}</Text>
+              )}
             </View>
           );
         })}
@@ -124,9 +143,11 @@ const styles = StyleSheet.create({
   paxAvatarText: { fontSize: 11, fontWeight: "700", color: colors.mauve },
   paxName: { flex: 1, fontSize: 12.5, fontWeight: "600", color: colors.plum },
   paxNameRemoved: { textDecorationLine: "line-through" },
-  paxActions: { flexDirection: "row" },
+  paxActions: { flexDirection: "row", gap: 6 },
   paxActionBtn: { backgroundColor: colors.plum, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },
   paxActionText: { color: colors.cream, fontSize: 11, fontWeight: "700" },
+  paxNoShowBtn: { borderWidth: 1, borderColor: colors.alert, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
+  paxNoShowText: { color: colors.alert, fontSize: 11, fontWeight: "700" },
   paxDone: { fontSize: 11, color: colors.good, fontWeight: "700" },
   paxAbsentTag: { fontSize: 10, fontWeight: "700", color: colors.alert, backgroundColor: colors.alertSoft, paddingHorizontal: 9, paddingVertical: 3, borderRadius: radius.pill },
   modalBackdrop: { flex: 1, backgroundColor: "rgba(51,42,47,0.45)", justifyContent: "flex-end" },
