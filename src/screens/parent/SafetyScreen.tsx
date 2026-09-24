@@ -88,7 +88,7 @@ export default function SafetyScreen() {
         </ScrollView>
       )}
 
-      <SOSButton />
+        <SOSButton bottomOffset={78} />
     </SafeAreaView>
   );
 }

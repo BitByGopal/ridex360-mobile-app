@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import RoleSelectScreen, { Role } from "../screens/RoleSelectScreen";
 import LoginScreen from "../screens/LoginScreen";
 import ParentNavigator from "./ParentNavigator";
-import DriverTripScreen from "../screens/driver/DriverTripScreen";
+import DriverNavigator from "./DriverNavigator";
 import { colors } from "../theme";
 
 export default function RootNavigator() {
@@ -32,7 +32,7 @@ export default function RootNavigator() {
       ) : me.role === "parent" ? (
         <ParentNavigator />
       ) : me.role === "driver" ? (
-        <DriverTripScreen />
+        <DriverNavigator />
       ) : (
         // org_admin: no dedicated mobile screens yet -- use Django Admin (see backend README)
         <LoginScreen />
