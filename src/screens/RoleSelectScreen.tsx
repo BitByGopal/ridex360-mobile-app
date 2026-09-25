@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { colors, radius, spacing } from "../theme";
 
@@ -60,13 +61,6 @@ const ROLES: {
   },
 ];
 
-/**
- * Home / role-selection screen. Doesn't gate any real backend logic on
- * its own -- Parent and Employee/Passenger both route to the same
- * Login screen (the backend's role field decides what the person
- * actually sees), and Driver/Organization likewise reach their own
- * existing login flow. This screen's only job is first impressions.
- */
 export default function RoleSelectScreen({ onSelect }: Props) {
   const scrollRef = useRef<ScrollView>(null);
 
@@ -84,7 +78,12 @@ export default function RoleSelectScreen({ onSelect }: Props) {
 
         <View style={styles.heroWrap}>
           <Image source={require("../assets/hero-passenger.jpg")} style={styles.hero} />
-          <View style={styles.heroScrim} />
+          <LinearGradient
+            colors={["rgba(255,255,255,0.92)", "rgba(255,255,255,0.55)", "rgba(255,255,255,0)"]}
+            locations={[0, 0.4, 0.68]}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
           <View style={styles.heroTextBlock}>
             <Text style={styles.eyebrow}>TRACK {"\u00B7"} CONNECT {"\u00B7"} MOVE SAFER</Text>
             <Text style={styles.heading}>
@@ -99,7 +98,7 @@ export default function RoleSelectScreen({ onSelect }: Props) {
           {CAPABILITIES.map((c, i) => (
             <React.Fragment key={c.icon}>
               <View style={styles.capabilityItem}>
-                <Ionicons name={c.icon} size={17} color={colors.rose} />
+                <Ionicons name={c.icon} size={18} color={colors.rose} />
                 <Text style={styles.capabilityLabel}>{c.label}</Text>
               </View>
               {i < CAPABILITIES.length - 1 && <View style={styles.capabilityDivider} />}
@@ -145,61 +144,57 @@ export default function RoleSelectScreen({ onSelect }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.cream },
-  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, paddingTop: 2 },
-  header: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 8 },
-  logoMark: { width: 24, height: 24, resizeMode: "contain" },
-  brand: { fontSize: 15, fontWeight: "700", color: colors.plum },
+  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: 4 },
+  header: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 14 },
+  logoMark: { width: 32, height: 32, resizeMode: "contain" },
+  brand: { fontSize: 18, fontWeight: "700", color: colors.plum },
 
-  heroWrap: { borderRadius: radius.lg, overflow: "hidden", marginBottom: 10, height: 220 },
+  heroWrap: { borderRadius: radius.lg, overflow: "hidden", marginBottom: 16, height: 252 },
   hero: { width: "100%", height: "100%", position: "absolute" },
-  heroScrim: {
-    position: "absolute", top: 0, left: 0, right: 0, height: 118,
-    backgroundColor: "rgba(255,255,255,0.72)",
-  },
-  heroTextBlock: { padding: 14 },
-  eyebrow: { fontSize: 9.5, fontWeight: "700", letterSpacing: 1.2, color: colors.inkSoft, marginBottom: 4 },
-  heading: { fontSize: 21, fontWeight: "800", lineHeight: 24 },
+  heroTextBlock: { padding: 16 },
+  eyebrow: { fontSize: 10, fontWeight: "700", letterSpacing: 1.2, color: colors.inkSoft, marginBottom: 5 },
+  heading: { fontSize: 23, fontWeight: "800", lineHeight: 27 },
   headingNavy: { color: colors.plum },
   headingGreen: { color: colors.rose },
-  subheading: { fontSize: 11, color: colors.inkSoft, lineHeight: 14, marginTop: 4, maxWidth: "92%" },
+  subheading: { fontSize: 11.5, color: colors.inkSoft, lineHeight: 15, marginTop: 5, maxWidth: "92%" },
 
   capabilityStrip: {
     flexDirection: "row", backgroundColor: colors.beige, borderRadius: radius.md,
-    paddingVertical: 9, paddingHorizontal: 4, marginBottom: 12, alignItems: "center",
+    paddingVertical: 13, paddingHorizontal: 4, marginBottom: 18, alignItems: "center",
   },
-  capabilityItem: { flex: 1, alignItems: "center", gap: 3 },
-  capabilityLabel: { fontSize: 8.5, fontWeight: "600", color: colors.plum, textAlign: "center", lineHeight: 10 },
-  capabilityDivider: { width: 1, height: 24, backgroundColor: "rgba(15,23,42,0.08)" },
+  capabilityItem: { flex: 1, alignItems: "center", gap: 4 },
+  capabilityLabel: { fontSize: 9, fontWeight: "600", color: colors.plum, textAlign: "center", lineHeight: 11 },
+  capabilityDivider: { width: 1, height: 26, backgroundColor: "rgba(15,23,42,0.08)" },
 
-  question: { fontSize: 15.5, fontWeight: "700", color: colors.plum, textAlign: "center" },
-  questionSub: { fontSize: 11, color: colors.inkFaint, textAlign: "center", marginTop: 1, marginBottom: 8 },
+  question: { fontSize: 16.5, fontWeight: "700", color: colors.plum, textAlign: "center" },
+  questionSub: { fontSize: 11.5, color: colors.inkFaint, textAlign: "center", marginTop: 2, marginBottom: 12 },
 
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
   card: {
     width: "48%", borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.card,
-    borderWidth: 1, borderColor: colors.line, height: 138,
+    borderWidth: 1, borderColor: colors.line, height: 160,
     shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
-  cardImage: { position: "absolute", bottom: 0, left: 0, right: 0, height: 56, width: "100%" },
+  cardImage: { position: "absolute", bottom: 0, left: 0, right: 0, height: 68, width: "100%" },
   cardIconWrap: {
-    position: "absolute", top: 8, left: 8, width: 24, height: 24, borderRadius: 8,
+    position: "absolute", top: 9, left: 9, width: 26, height: 26, borderRadius: 9,
     backgroundColor: colors.beige, alignItems: "center", justifyContent: "center",
   },
   cardArrow: {
-    position: "absolute", top: 8, right: 8, width: 20, height: 20, borderRadius: 10,
+    position: "absolute", top: 9, right: 9, width: 21, height: 21, borderRadius: 11,
     backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
     shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 },
   },
-  cardTextWrap: { position: "absolute", top: 38, left: 8, right: 8 },
-  cardTitle: { fontSize: 11.5, fontWeight: "700", color: colors.plum },
-  cardSubtitle: { fontSize: 9, color: colors.inkFaint, marginTop: 1 },
-  cardTags: { fontSize: 7.5, color: colors.inkSoft, marginTop: 2, fontWeight: "600" },
+  cardTextWrap: { position: "absolute", top: 42, left: 9, right: 9 },
+  cardTitle: { fontSize: 12, fontWeight: "700", color: colors.plum },
+  cardSubtitle: { fontSize: 9.5, color: colors.inkFaint, marginTop: 1 },
+  cardTags: { fontSize: 8, color: colors.inkSoft, marginTop: 3, fontWeight: "600" },
 
   cta: {
     flexDirection: "row", backgroundColor: colors.rose, borderRadius: radius.md,
-    paddingVertical: 12, alignItems: "center", justifyContent: "center", gap: 7, marginBottom: 8,
+    paddingVertical: 15, alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14,
   },
-  ctaText: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  footnote: { textAlign: "center", fontSize: 10, color: colors.inkFaint },
+  ctaText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  footnote: { textAlign: "center", fontSize: 10.5, color: colors.inkFaint },
   footnoteBold: { color: colors.plum, fontWeight: "700" },
 });
