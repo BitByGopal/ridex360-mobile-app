@@ -80,3 +80,40 @@ export interface Trip {
   trip_stops: TripStop[];
   trip_passengers: TripPassenger[];
 }
+
+
+export interface OrgDashboardMetrics {
+  organization: { id: string; name: string; org_type: string };
+  total_vehicles: number;
+  active_vehicles: number;
+  total_drivers: number;
+  active_drivers: number;
+  total_passengers: number;
+  total_parents: number;
+  total_employees: number;
+  active_routes: number;
+  todays_trips: number;
+  active_alerts: number;
+}
+
+export type FleetTripStatus = "scheduled" | "active" | "completed" | "cancelled";
+
+export interface FleetTrip {
+  trip_id: string;
+  vehicle_label: string | null;
+  driver_name: string | null;
+  route_name: string;
+  route_type: "morning" | "evening";
+  status: FleetTripStatus;
+  is_replacement_driver: boolean;
+  last_lat: string | null;
+  last_lng: string | null;
+  last_ping_at: string | null;
+  traffic_detected: boolean;
+  alt_route_active: boolean;
+  next_stop_name: string | null;
+  eta_minutes: number | null;
+  passengers_total: number;
+  passengers_boarded: number;
+  passengers_absent: number;
+}

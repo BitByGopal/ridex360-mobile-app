@@ -29,11 +29,7 @@ const ROLES: { key: Role; title: string; subtitle: string; icon: string; bg: str
  */
 export default function RoleSelectScreen({ onSelect }: Props) {
   function handlePress(role: Role) {
-    if (role === "organization") {
-      Linking.openURL(API_BASE_URL.replace(/\/api\/?$/, "/admin/"));
-      return;
-    }
-    onSelect(role);
+  onSelect(role);
   }
 
   return (

@@ -7,6 +7,7 @@ import RoleSelectScreen, { Role } from "../screens/RoleSelectScreen";
 import LoginScreen from "../screens/LoginScreen";
 import ParentNavigator from "./ParentNavigator";
 import DriverNavigator from "./DriverNavigator";
+import OrgNavigator from "./OrgNavigator";
 import { colors } from "../theme";
 
 export default function RootNavigator() {
@@ -33,8 +34,9 @@ export default function RootNavigator() {
         <ParentNavigator />
       ) : me.role === "driver" ? (
         <DriverNavigator />
+      ) : me.role === "org_admin" ? (
+        <OrgNavigator />
       ) : (
-        // org_admin: no dedicated mobile screens yet -- use Django Admin (see backend README)
         <LoginScreen />
       )}
     </NavigationContainer>

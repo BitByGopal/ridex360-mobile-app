@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import { Me, Passenger, Trip } from "../types";
+import { Me, Passenger, Trip, OrgDashboardMetrics, FleetTrip } from "../types";
 
 export const Api = {
   me: () => apiRequest<Me>("/me/"),
@@ -37,5 +37,8 @@ export const Api = {
     apiRequest<Trip>(`/driver/trips/${tripId}/traffic/use-alternate/`, { method: "POST" }),
   clearTraffic: (tripId: string) =>
     apiRequest<Trip>(`/driver/trips/${tripId}/traffic/clear/`, { method: "POST" }),
+
+  orgDashboard: () => apiRequest<OrgDashboardMetrics>("/org/dashboard/"),
+  orgLiveFleet: () => apiRequest<FleetTrip[]>("/org/fleet/live/"),
 
 };
