@@ -9,9 +9,15 @@
     "ios": {
       "supportsTablet": true
     },
-    "android": {
+      "android": {
+      "package": "com.bitbygopal.ridex360",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyA-zCTCisLMytKfN4_9H-4WI2rdB-vW4KI"
+        }
+      },
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +26,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "172960ba-41b5-4b3c-9d37-6dfcc4c72a33"
+      }
     }
   }
 }
