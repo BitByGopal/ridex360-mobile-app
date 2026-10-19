@@ -53,6 +53,16 @@ const ROLES: {
   },
 ];
 
+const FEATURES: {
+  key: string;
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  label: string;
+}[] = [
+  { key: "tracking", icon: "location-outline", label: "Live Tracking" },
+  { key: "eta", icon: "time-outline", label: "Smart ETA" },
+  { key: "safety", icon: "shield-checkmark-outline", label: "Journey Safety" },
+];
+
 export default function RoleSelectScreen({ onSelect }: Props) {
   const scrollRef = useRef<ScrollView>(null);
 
@@ -101,6 +111,17 @@ export default function RoleSelectScreen({ onSelect }: Props) {
                   <Text style={styles.cardTags} numberOfLines={2}>{r.tags}</Text>
                 </View>
               </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.featureStrip}>
+            {FEATURES.map((f) => (
+              <View key={f.key} style={styles.featureItem}>
+                <View style={styles.featureIconWrap}>
+                  <Ionicons name={f.icon} size={24} color={colors.rose} />
+                </View>
+                <Text style={styles.featureLabel} numberOfLines={1}>{f.label}</Text>
+              </View>
             ))}
           </View>
         </View>
@@ -197,6 +218,24 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14.5, fontWeight: "700", color: colors.plum },
   cardSubtitle: { fontSize: 11.5, color: colors.inkFaint, marginTop: 2 },
   cardTags: { fontSize: 10, color: colors.inkSoft, marginTop: 5, fontWeight: "600", lineHeight: 13 },
+
+  featureStrip: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 26,
+    paddingHorizontal: 4,
+  },
+  featureItem: { flex: 1, alignItems: "center" },
+  featureIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: ICON_BG,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  featureLabel: { fontSize: 12.5, fontWeight: "600", color: colors.plum, textAlign: "center" },
 
   cta: {
     flexDirection: "row",
