@@ -2,7 +2,6 @@ import React, { useRef } from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { colors, radius, spacing } from "../theme";
 
@@ -11,13 +10,6 @@ export type Role = "parent" | "passenger" | "driver" | "organization";
 interface Props {
   onSelect: (role: Role) => void;
 }
-
-const CAPABILITIES: { icon: React.ComponentProps<typeof Ionicons>["name"]; label: string }[] = [
-  { icon: "location", label: "Live\nTracking" },
-  { icon: "git-network", label: "Smart\nRoutes" },
-  { icon: "notifications", label: "Real-Time\nAlerts" },
-  { icon: "shield-checkmark", label: "Enhanced\nSafety" },
-];
 
 const ROLES: {
   key: Role;
@@ -32,7 +24,7 @@ const ROLES: {
     icon: "people",
     title: "Parent",
     subtitle: "Track your child's journey",
-    tags: "Live tracking \u00B7 Alerts \u00B7 Safety",
+    tags: "Live tracking · Alerts · Safety",
     image: require("../assets/role-parent.jpg"),
   },
   {
@@ -40,7 +32,7 @@ const ROLES: {
     icon: "person",
     title: "Employee / Passenger",
     subtitle: "Track your own transport",
-    tags: "Live location \u00B7 ETA \u00B7 Stop alerts",
+    tags: "Live location · ETA · Stop alerts",
     image: require("../assets/role-employee.jpg"),
   },
   {
@@ -48,7 +40,7 @@ const ROLES: {
     icon: "bus",
     title: "Driver",
     subtitle: "Run today's route",
-    tags: "Passenger list \u00B7 Navigation \u00B7 Trip updates",
+    tags: "Passenger list · Navigation · Trip updates",
     image: require("../assets/role-driver.jpg"),
   },
   {
@@ -56,7 +48,7 @@ const ROLES: {
     icon: "business",
     title: "Organization",
     subtitle: "Manage fleet and routes",
-    tags: "Fleet overview \u00B7 Operations \u00B7 Insights",
+    tags: "Fleet overview · Operations · Insights",
     image: require("../assets/role-organization.jpg"),
   },
 ];
@@ -76,34 +68,13 @@ export default function RoleSelectScreen({ onSelect }: Props) {
           <Text style={styles.brand}>RideX360</Text>
         </View>
 
-        <View style={styles.heroWrap}>
-          <Image source={require("../assets/hero-passenger.jpg")} style={styles.hero} />
-          <LinearGradient
-            colors={["rgba(255,255,255,0.92)", "rgba(255,255,255,0.55)", "rgba(255,255,255,0)"]}
-            locations={[0, 0.4, 0.68]}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
-          <View style={styles.heroTextBlock}>
-            <Text style={styles.eyebrow}>TRACK {"\u00B7"} CONNECT {"\u00B7"} MOVE SAFER</Text>
-            <Text style={styles.heading}>
-              <Text style={styles.headingNavy}>One platform.{"\n"}</Text>
-              <Text style={styles.headingGreen}>Every journey.</Text>
-            </Text>
-            <Text style={styles.subheading}>Connect people, vehicles and places in real time.</Text>
-          </View>
-        </View>
-
-        <View style={styles.capabilityStrip}>
-          {CAPABILITIES.map((c, i) => (
-            <React.Fragment key={c.icon}>
-              <View style={styles.capabilityItem}>
-                <Ionicons name={c.icon} size={18} color={colors.rose} />
-                <Text style={styles.capabilityLabel}>{c.label}</Text>
-              </View>
-              {i < CAPABILITIES.length - 1 && <View style={styles.capabilityDivider} />}
-            </React.Fragment>
-          ))}
+        <View style={styles.headingBlock}>
+          <Text style={styles.eyebrow}>TRACK · CONNECT · MOVE SAFER</Text>
+          <Text style={styles.heading}>
+            <Text style={styles.headingNavy}>One platform.{"\n"}</Text>
+            <Text style={styles.headingGreen}>Every journey.</Text>
+          </Text>
+          <Text style={styles.subheading}>Connect people, vehicles and places in real time.</Text>
         </View>
 
         <Text style={styles.question}>How will you use RideX360?</Text>
@@ -134,7 +105,7 @@ export default function RoleSelectScreen({ onSelect }: Props) {
         </TouchableOpacity>
 
         <Text style={styles.footnote}>
-          People {"\u00B7"} Vehicles {"\u00B7"} Places {"  \u2014  "}
+          People · Vehicles · Places{"  —  "}
           <Text style={styles.footnoteBold}>A Safer Tomorrow</Text>
         </Text>
       </ScrollView>
@@ -145,31 +116,21 @@ export default function RoleSelectScreen({ onSelect }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.cream },
   content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: 4 },
-  header: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 14 },
+  header: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 18 },
   logoMark: { width: 32, height: 32, resizeMode: "contain" },
   brand: { fontSize: 18, fontWeight: "700", color: colors.plum },
 
-  heroWrap: { borderRadius: radius.lg, overflow: "hidden", marginBottom: 16, height: 252 },
-  hero: { width: "100%", height: "100%", position: "absolute" },
-  heroTextBlock: { padding: 16 },
-  eyebrow: { fontSize: 10, fontWeight: "700", letterSpacing: 1.2, color: colors.inkSoft, marginBottom: 5 },
-  heading: { fontSize: 23, fontWeight: "800", lineHeight: 27 },
+  headingBlock: { marginBottom: 22 },
+  eyebrow: { fontSize: 11, fontWeight: "700", letterSpacing: 1.3, color: colors.inkFaint, marginBottom: 6 },
+  heading: { fontSize: 26, fontWeight: "800", lineHeight: 30 },
   headingNavy: { color: colors.plum },
   headingGreen: { color: colors.rose },
-  subheading: { fontSize: 11.5, color: colors.inkSoft, lineHeight: 15, marginTop: 5, maxWidth: "92%" },
-
-  capabilityStrip: {
-    flexDirection: "row", backgroundColor: colors.beige, borderRadius: radius.md,
-    paddingVertical: 13, paddingHorizontal: 4, marginBottom: 18, alignItems: "center",
-  },
-  capabilityItem: { flex: 1, alignItems: "center", gap: 4 },
-  capabilityLabel: { fontSize: 9, fontWeight: "600", color: colors.plum, textAlign: "center", lineHeight: 11 },
-  capabilityDivider: { width: 1, height: 26, backgroundColor: "rgba(15,23,42,0.08)" },
+  subheading: { fontSize: 12.5, color: colors.inkSoft, lineHeight: 17, marginTop: 6, maxWidth: "92%" },
 
   question: { fontSize: 16.5, fontWeight: "700", color: colors.plum, textAlign: "center" },
-  questionSub: { fontSize: 11.5, color: colors.inkFaint, textAlign: "center", marginTop: 2, marginBottom: 12 },
+  questionSub: { fontSize: 11.5, color: colors.inkFaint, textAlign: "center", marginTop: 2, marginBottom: 14 },
 
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 },
   card: {
     width: "48%", borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.card,
     borderWidth: 1, borderColor: colors.line, height: 160,
